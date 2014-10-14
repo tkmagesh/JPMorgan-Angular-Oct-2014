@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>jQuery Intro</title>
+    <script src="jquery-2.1.1.js"></script>
+    <style>
+        label{
+            display: block;
+        }
+        .highlight {
+            border: 2px solid red;
+        }
+    </style>
+    <script>
+        function greet(){
+          var greetMsg = "Hi " + $("#txtFirstName").val() + " " + $("#txtLastName").val();
+          $("#divMessage").html(greetMsg);
+        }
+        function init(){
+            $("#btnGreet").click(greet);
+        }
+        //$(document).ready(init);
+        $(init);
+    </script>
+</head>
+<body>
+    <label for="">First Name:</label>
+    <input type="text" name="" id="txtFirstName" class="nameBox">
+    <label for="">Last Name:</label>
+    <input type="text" name="" id="txtLastName" class="nameBox">
+    <label for="">Age :</label>
+    <input type="text" name="" id="txtAge" class="numberBox">
+    <div>
+        <input type="button" value="Greet" id="btnGreet">
+        <button>Cancel</button>
+        <div id="divMessage"></div>
+    </div>
+</body>
+</html>
