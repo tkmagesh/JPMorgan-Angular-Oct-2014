@@ -37,6 +37,8 @@
         return Task;
     });
         
+   
+        
     taskApp.service('taskStorage',function ($window,Task){
             console.log("One instance of taskStorage created");
             var storage = $window.localStorage; 
@@ -71,21 +73,36 @@
 
         });
     
-    taskApp.controller('taskController', function ($scope,taskStorage, $http){
+    taskApp.service('taskService',function($http, $q, Task){
+        this.getAll = function(){
+            var defered = $q.defer();
+            $http({method : "get", url : "/tasks"}).then(function(response){
+                var tasks = {};
+                response.data.forEach(function(taskData){
+                    tasks[taskData.category] = tasks[taskData.category] || [];
+                    tasks[taskData.category].push(new Task(taskData));
+                });
+                defered.resolve(tasks);
+            });
+            return defered.promise;
+        }
+    });
+    
+    taskApp.controller('taskController', function ($scope,taskStorage, taskService){
         console.log("from taskController", taskStorage);
         $scope.tasks = {};
-        var promise = $http({method : "get", url : "/tasks"});
-        promise.then(function(response){
+        
+        
+        /*taskService.getAll().then(function(response){
             response.data.forEach(function(task){
                 $scope.tasks[task.category] = $scope.tasks[task.category] || [];
                 $scope.tasks[task.category].push(task);
             });  
-        });
-        
-        /*taskStorage.getAll().forEach(function(task){
-            $scope.tasks[task.category] = $scope.tasks[task.category] || [];
-            $scope.tasks[task.category].push(task);
         });*/
+        
+        taskService.getAll().then(function(data){
+            $scope.tasks = data;
+        });
         
         $scope.getCompletedCount = function(){
             return $scope.tasks.reduce(function(s,t){
