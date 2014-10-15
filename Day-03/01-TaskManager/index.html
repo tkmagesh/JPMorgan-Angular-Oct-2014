@@ -13,8 +13,15 @@
     <script src="angular.js"></script>
     <script>
     
+    var utils = angular.module('utils',[]);
+    utils.filter('trimText',function(){
+        return function(data, trimLength){
+            data =  data || "";
+            return data.length < trimLength ? data : data.substr(0,trimLength) + "...";
+        }
+    });    
     //var activationTime = new Date();
-    var taskApp = angular.module('taskApp',[]);
+    var taskApp = angular.module('taskApp',['utils']);
     taskApp.value("activationTime", new Date());
     taskApp.factory('Task', function(activationTime){
         //do something with activationTime (dependency);
@@ -26,7 +33,6 @@
         Task.prototype.toggle = function(){
             this.isCompleted = !this.isCompleted;
         }
-        //Task.activationTime = activationTime;
         return Task;
     });
         
@@ -46,7 +52,9 @@
             };
             this.add = function(taskName){
                 var id = new Date().getTime().toString();
-                var task = new Task(id,taskName,false);
+                var task = new Task({id : id,
+                                     name : taskName,
+                                     isCompleted : false});
                 storage.setItem(task.id
                                     ,$window.JSON.stringify(task));
                 return task;
@@ -88,6 +96,7 @@
                 }
         }
     });
+    
     taskApp.controller("dummyController",function(taskStorage){
         console.log("from dummyController", taskStorage);
     });
@@ -95,6 +104,7 @@
 </head>
 <body ng-controller="taskController" >
     <h1>Task Manager - ({{getCompletedCount()}} / {{tasks.length}})</h1>
+    <input type="range" ng-init="taskNameLimit=10" ng-model="taskNameLimit" min="10" max="50">
     <hr>
     <form name="taskForm">
     <label for="">Task :</label>
@@ -103,7 +113,7 @@
     <input type="button" id="btnRemoveCompleted" value="Remove Completed" ng-click="removeCompleted()"></input>
     </form>
     <ul>
-        <li ng-repeat="task in tasks" ng-click="toggleCompletion(task)" ng-class="{completed : task.isCompleted}">{{task}}</li>
+        <li ng-repeat="task in tasks" ng-click="toggleCompletion(task)" ng-class="{completed : task.isCompleted}">{{task.name | trimText:taskNameLimit}}</li>
     </ul>
     <div id="divMessage"></div>
     <div ng-controller="dummyController"></div>
