@@ -18,10 +18,10 @@
     taskApp.value("activationTime", new Date());
     taskApp.factory('Task', function(activationTime){
         //do something with activationTime (dependency);
-        function Task(id, name,isCompleted){
-            this.id = id || -1;
-            this.name = name || "";
-            this.isCompleted = isCompleted || false;
+        function Task(defaults){
+            this.id = defaults.id || -1;
+            this.name = defaults.name || "";
+            this.isCompleted = defaults.isCompleted || false;
         }
         Task.prototype.toggle = function(){
             this.isCompleted = !this.isCompleted;
@@ -29,20 +29,41 @@
         //Task.activationTime = activationTime;
         return Task;
     });
-    
-    taskApp.controller('taskController', function ($scope, Task, $window){
-        var storage = $window.localStorage; 
-        function getAllTasksFromStorage(){
-            var tasks = [];
-            for(var i =0;i<storage.length;i++){
-                var key = storage.key(i);
-                var dataStr = storage.getItem(key);
-                var task = $window.JSON.parse(dataStr);
-                tasks.push(task);
+        
+    taskApp.service('taskStorage',function ($window,Task){
+            console.log("One instance of taskStorage created");
+            var storage = $window.localStorage; 
+            this.getAll = function (){
+                var tasks = [];
+                for(var i =0;i<storage.length;i++){
+                    var key = storage.key(i);
+                    var dataStr = storage.getItem(key);
+                    var taskData = $window.JSON.parse(dataStr);
+                    var task = new Task(taskData);
+                    tasks.push(task);
+                }
+                return tasks;
+            };
+            this.add = function(taskName){
+                var id = new Date().getTime().toString();
+                var task = new Task(id,taskName,false);
+                storage.setItem(task.id
+                                    ,$window.JSON.stringify(task));
+                return task;
+            };
+            this.update = function(task){
+                storage.setItem(task.id
+                                ,$window.JSON.stringify(task));
+            };
+            this.remove = function(task){
+                storage.removeItem(task.id);
             }
-            return tasks;
-        }
-        $scope.tasks = getAllTasksFromStorage();
+
+        });
+    
+    taskApp.controller('taskController', function ($scope,taskStorage){
+        console.log("from taskController", taskStorage);
+        $scope.tasks = taskStorage.getAll();
         
         $scope.getCompletedCount = function(){
             return $scope.tasks.reduce(function(s,t){
@@ -50,23 +71,25 @@
             },0);
         }
         $scope.addTask = function(newTask){
-            var id = new Date().getTime().toString();
-            var task = new Task(id, newTask,false);
+            var task = taskStorage.add(newTask);
             $scope.tasks.push(task);
-            storage.setItem(id,$window.JSON.stringify(task));
+            
         };
         $scope.toggleCompletion = function(task){
             task.toggle();
-            storage.setItem(task.id,$window.JSON.stringify(task));
+            taskStorage.update(task);  
         };
         
         $scope.removeCompleted = function(){
             for(var i=$scope.tasks.length-1;i>=0;i--)
                 if ($scope.tasks[i].isCompleted){
-                    storage.removeItem(tasks[i].id);
+                    taskStorage.remove($scope.tasks[i]);
                     $scope.tasks.splice(i,1);
                 }
         }
+    });
+    taskApp.controller("dummyController",function(taskStorage){
+        console.log("from dummyController", taskStorage);
     });
     </script>
 </head>
@@ -83,5 +106,6 @@
         <li ng-repeat="task in tasks" ng-click="toggleCompletion(task)" ng-class="{completed : task.isCompleted}">{{task}}</li>
     </ul>
     <div id="divMessage"></div>
+    <div ng-controller="dummyController"></div>
 </body>
 </html>
