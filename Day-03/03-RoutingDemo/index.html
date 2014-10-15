@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="routeApp">
+<head>
+    <meta charset="UTF-8">
+    <title>Routing Demo</title>
+    <style>
+    .footer{
+        position: absolute;
+        bottom: 10px;
+    }
+    </style>
+    <script src="angular.js"></script>
+    <script src="angular-route.js"></script>
+    <script>
+        var routeApp = angular.module('routeApp',['ngRoute']);
+        routeApp.config(function($routeProvider){
+            $routeProvider
+                .when('/tasks/:category',{
+                    templateUrl : 'templates/tasks.tmpl.html',
+                    controller : 'taskController'
+                })
+                .when('/categories/:id',{
+                    templateUrl : 'templates/categories.tmpl.html',
+                    controller : 'categoryController'
+                })
+                .otherwise({
+                    redirectTo : '/tasks/official'
+                });
+                      
+        });
+        routeApp.controller("rootController",function($scope){
+            $scope.message = "root controller message";
+            $scope.setMessage = function(msg){
+                $scope.message = msg;
+            }
+        })
+        routeApp.controller("taskController",function($scope,$routeParams){
+            $scope.setMessage("All tasks from [" + $routeParams.category + "] will be displayed here");
+        });
+        routeApp.controller("categoryController",function($scope,$routeParams){
+            $scope.setMessage("Information about category[id=" + $routeParams.id + "] wil be displayed here");
+        });
+    </script>
+</head>
+<body>
+   <h1>JPM App</h1>
+   <hr>
+   <div ng-controller="rootController">
+        <ng-view></ng-view>   
+        <div class="footer">{{message}}</div>
+   </div>
+    
+</body>
+</html>
