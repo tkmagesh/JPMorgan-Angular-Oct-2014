@@ -35,6 +35,10 @@
         $scope.toggleCompletion = function(task){
             task.isCompleted = !task.isCompleted;
         };
+        $scope.cancel = function($event){
+            if ($event.keyCode === 27)
+                $scope.taskForm.txtTask.$rollbackViewValue();
+        }
         $scope.removeCompleted = function(){
           /*  $scope.tasks = $scope.tasks.filter(function(t){
                 return !t.isCompleted;
@@ -53,13 +57,15 @@
     }
     </script>
 </head>
-<body ng-controller="taskController">
+<body ng-controller="taskController" ng-init="newTask='Default Task'">
     <h1>Task Manager - ({{getCompletedCount()}} / {{tasks.length}})</h1>
     <hr>
+    <form name="taskForm">
     <label for="">Task :</label>
-    <input type="text" name="" id="txtTask" ng-model="newTask" ng-model-options="{updateOn : 'default blur'}">
+    <input type="text" name="txtTask" id="txtTask" ng-model="newTask" ng-model-options="{updateOn : 'blur'}" ng-keyup="cancel($event)">
     <input type="button" value="Add Task" id="btnAdd" ng-click="addTask(newTask)">
     <input type="button" id="btnRemoveCompleted" value="Remove Completed" ng-click="removeCompleted()"></input>
+    </form>
     <ul>
         <li ng-repeat="task in tasks" ng-click="toggleCompletion(task)" ng-class="{completed : task.isCompleted}">{{task}}</li>
     </ul>

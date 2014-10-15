@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="taskApp">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Manager</title>
+    <style>
+        .completed{
+            color : red;
+            text-decoration: line-through;
+            font-style: italic;
+        }
+    </style>
+    <script src="angular.js"></script>
+    <script>
+    
+    //var activationTime = new Date();
+    var taskApp = angular.module('taskApp',[]);
+    taskApp.value("activationTime", new Date());
+    taskApp.factory('Task', function(activationTime){
+        //do something with activationTime (dependency);
+        function Task(id, name,isCompleted){
+            this.id = id || -1;
+            this.name = name || "";
+            this.isCompleted = isCompleted || false;
+        }
+        Task.prototype.toggle = function(){
+            this.isCompleted = !this.isCompleted;
+        }
+        //Task.activationTime = activationTime;
+        return Task;
+    });
+    
+    taskApp.controller('taskController', function ($scope, Task, $window){
+        var storage = $window.localStorage; 
+        function getAllTasksFromStorage(){
+            var tasks = [];
+            for(var i =0;i<storage.length;i++){
+                var key = storage.key(i);
+                var dataStr = storage.getItem(key);
+                var task = $window.JSON.parse(dataStr);
+                tasks.push(task);
+            }
+            return tasks;
+        }
+        $scope.tasks = getAllTasksFromStorage();
+        
+        $scope.getCompletedCount = function(){
+            return $scope.tasks.reduce(function(s,t){
+                 return s + (t.isCompleted ? 1 : 0);
+            },0);
+        }
+        $scope.addTask = function(newTask){
+            var id = new Date().getTime().toString();
+            var task = new Task(id, newTask,false);
+            $scope.tasks.push(task);
+            storage.setItem(id,$window.JSON.stringify(task));
+        };
+        $scope.toggleCompletion = function(task){
+            task.toggle();
+            storage.setItem(task.id,$window.JSON.stringify(task));
+        };
+        
+        $scope.removeCompleted = function(){
+            for(var i=$scope.tasks.length-1;i>=0;i--)
+                if ($scope.tasks[i].isCompleted){
+                    storage.removeItem(tasks[i].id);
+                    $scope.tasks.splice(i,1);
+                }
+        }
+    });
+    </script>
+</head>
+<body ng-controller="taskController" >
+    <h1>Task Manager - ({{getCompletedCount()}} / {{tasks.length}})</h1>
+    <hr>
+    <form name="taskForm">
+    <label for="">Task :</label>
+    <input type="text" name="txtTask" id="txtTask" ng-model="newTask" ng-model-options="{updateOn : 'blur'}" ng-keyup="cancel($event)">
+    <input type="button" value="Add Task" id="btnAdd" ng-click="addTask(newTask)">
+    <input type="button" id="btnRemoveCompleted" value="Remove Completed" ng-click="removeCompleted()"></input>
+    </form>
+    <ul>
+        <li ng-repeat="task in tasks" ng-click="toggleCompletion(task)" ng-class="{completed : task.isCompleted}">{{task}}</li>
+    </ul>
+    <div id="divMessage"></div>
+</body>
+</html>
