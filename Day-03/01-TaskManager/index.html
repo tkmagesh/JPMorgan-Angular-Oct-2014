@@ -29,6 +29,7 @@
             this.id = defaults.id || -1;
             this.name = defaults.name || "";
             this.isCompleted = defaults.isCompleted || false;
+            this.category = defaults.category || "Personal";
         }
         Task.prototype.toggle = function(){
             this.isCompleted = !this.isCompleted;
@@ -40,20 +41,21 @@
             console.log("One instance of taskStorage created");
             var storage = $window.localStorage; 
             this.getAll = function (){
-                var tasks = [];
-                for(var i =0;i<storage.length;i++){
-                    var key = storage.key(i);
-                    var dataStr = storage.getItem(key);
-                    var taskData = $window.JSON.parse(dataStr);
-                    var task = new Task(taskData);
-                    tasks.push(task);
-                }
+                    var tasks = [];
+                    for(var i =0;i<storage.length;i++){
+                        var key = storage.key(i);
+                        var dataStr = storage.getItem(key);
+                        var taskData = $window.JSON.parse(dataStr);
+                        var task = new Task(taskData);
+                        tasks.push(task);
+                    }
                 return tasks;
             };
-            this.add = function(taskName){
+            this.add = function(taskName, category){
                 var id = new Date().getTime().toString();
                 var task = new Task({id : id,
                                      name : taskName,
+                                     category : category,
                                      isCompleted : false});
                 storage.setItem(task.id
                                     ,$window.JSON.stringify(task));
@@ -71,16 +73,21 @@
     
     taskApp.controller('taskController', function ($scope,taskStorage){
         console.log("from taskController", taskStorage);
-        $scope.tasks = taskStorage.getAll();
+        $scope.tasks = {};
+        taskStorage.getAll().forEach(function(task){
+            $scope.tasks[task.category] = $scope.tasks[task.category] || [];
+            $scope.tasks[task.category].push(task);
+        });
         
         $scope.getCompletedCount = function(){
             return $scope.tasks.reduce(function(s,t){
                  return s + (t.isCompleted ? 1 : 0);
             },0);
         }
-        $scope.addTask = function(newTask){
-            var task = taskStorage.add(newTask);
-            $scope.tasks.push(task);
+        $scope.addTask = function(newTask, taskCategory){
+            var task = taskStorage.add(newTask, taskCategory);
+            $scope.tasks[taskCategory] = $scope.tasks[taskCategory] || [];
+            $scope.tasks[taskCategory].push(task);
             
         };
         $scope.toggleCompletion = function(task){
@@ -94,7 +101,8 @@
                     taskStorage.remove($scope.tasks[i]);
                     $scope.tasks.splice(i,1);
                 }
-        }
+        };
+        
     });
     
     taskApp.controller("dummyController",function(taskStorage){
@@ -103,18 +111,31 @@
     </script>
 </head>
 <body ng-controller="taskController" >
-    <h1>Task Manager - ({{getCompletedCount()}} / {{tasks.length}})</h1>
+    <h1>Task Manager <!--- ({{getCompletedCount()}} / {{tasks.length}})--></h1>
     <input type="range" ng-init="taskNameLimit=10" ng-model="taskNameLimit" min="10" max="50">
+    Search : <input type="search" ng-model="searchTask.name">
+    isCompleted : <input type="checkbox" ng-model="searchTask.isCompleted">
+    <input type="button" value="Clear Completion Filter" ng-click="searchTask.isCompleted = undefined">
     <hr>
     <form name="taskForm">
     <label for="">Task :</label>
-    <input type="text" name="txtTask" id="txtTask" ng-model="newTask" ng-model-options="{updateOn : 'blur'}" ng-keyup="cancel($event)">
-    <input type="button" value="Add Task" id="btnAdd" ng-click="addTask(newTask)">
+    <input type="text" name="txtTask" id="txtTask" ng-model="newTask" >
+    <select ng-model="taskCategory">
+        <option value="Official">Official</option>
+        <option value="Personal">Personal</option>
+        <option value="Recreational">Recreational</option>
+    </select>
+    <input type="button" value="Add Task" id="btnAdd" ng-click="addTask(newTask, taskCategory)">
     <input type="button" id="btnRemoveCompleted" value="Remove Completed" ng-click="removeCompleted()"></input>
     </form>
-    <ul>
-        <li ng-repeat="task in tasks" ng-click="toggleCompletion(task)" ng-class="{completed : task.isCompleted}">{{task.name | trimText:taskNameLimit}}</li>
-    </ul>
+    
+    <div ng-repeat="(category,taskList) in tasks">
+        <h3>{{category}}</h3> 
+        <ul>
+            <div ng-repeat="task in taskList | filter:searchTask" ng-click="toggleCompletion(task)" ><li ng-class="{completed : task.isCompleted}">{{task.name | trimText:taskNameLimit}}</li></div>
+        </ul>   
+    </div>
+    
     <div id="divMessage"></div>
     <div ng-controller="dummyController"></div>
 </body>
